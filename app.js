@@ -35,7 +35,7 @@
   const state = {
     patient:{ name:"", age:null, gender:"" },
     danger:{},              // key -> 'ada' | 'tidak'
-    vitals:{ temp:36.8, spo2:null, hr:null, grunt:"tidak" },
+    vitals:{ temp:null, spo2:null, hr:null, grunt:"tidak" },
     points:[],              // hasil CNN disimpan internal, ditampilkan hanya pada hasil akhir
     result:null,
     dataConsent:null,
@@ -45,7 +45,7 @@
 
   const RESULT_TEXT = {
     highPneumonia:{
-      label:"⚠️ RISIKO TINGGI — PNEUMONIA BERAT",
+      label:"RISIKO TINGGI — PNEUMONIA BERAT",
       lead:"Balita menunjukkan tanda pneumonia berat. Segera rujuk ke fasilitas kesehatan dengan kapasitas lebih tinggi.",
       actions:[
         "Berikan dosis pertama antibiotik oral sebelum rujukan",
@@ -54,7 +54,7 @@
       ]
     },
     highDanger:{
-      label:"⚠️ RISIKO TINGGI — TANDA BAHAYA UMUM",
+      label:"RISIKO TINGGI — TANDA BAHAYA UMUM",
       lead:"Balita menunjukkan tanda bahaya yang memerlukan penanganan segera, tidak spesifik pneumonia. Segera rujuk untuk evaluasi lebih lanjut.",
       actions:[
         "Berikan dosis pertama antibiotik oral sebelum rujukan",
@@ -63,7 +63,7 @@
       ]
     },
     mid:{
-      label:"🟡 RISIKO SEDANG — PNEUMONIA",
+      label:"RISIKO SEDANG — PNEUMONIA",
       lead:"Balita menunjukkan tanda pneumonia tanpa tanda bahaya. Dapat ditangani di puskesmas dengan antibiotik oral.",
       actions:[
         "Berikan amoksisilin oral 40mg/kg per dosis, 2× sehari, selama 3-5 hari",
@@ -72,7 +72,7 @@
       ]
     },
     low:{
-      label:"🟢 RISIKO RENDAH — BUKAN PNEUMONIA",
+      label:"RISIKO RENDAH — BUKAN PNEUMONIA",
       lead:"Tidak ditemukan tanda pneumonia maupun tanda bahaya. Balita dapat dirawat di rumah.",
       actions:[
         "Balita dapat dirawat di rumah",
@@ -269,9 +269,8 @@
       <div class="content">
         <h4>${h.name}</h4>
         <p class="home-risk-line">${riskLabelFor(h)}</p>
-        <div class="history-footer">
+        <div class="history-footer history-footer-home-only">
           <span class="pill ${pill}">${historyActionFor(h)}</span>
-          <span class="history-time">${h.when}</span>
         </div>
       </div>
     </div>`;
@@ -434,9 +433,9 @@
         if(snap.maxState === "done"){
           state.vitals.spo2 = Number(snap.spo2);
           state.vitals.hr = Number(snap.hr);
-          $("#activePointLabel").textContent = "✓ Pengukuran sensor selesai. Siap memulai analisis.";
+          $("#activePointLabel").textContent = "Pemeriksaan selesai. Siap memulai analisis";
         } else {
-          $("#activePointLabel").textContent = "✓ 6 titik selesai. Ikuti instruksi pengukuran SpO₂ pada layar perangkat.";
+          $("#activePointLabel").textContent = "Tempelkan jari sesuai instruksi di perangkat fisik.";
         }
         renderPointList(-1, "waiting");
       } else {
@@ -447,7 +446,7 @@
       $("#activePointLabel").textContent = "Menunggu perangkat mulai merekam…";
       renderPointList(-1, "waiting");
     }
-    setTimerDisplay(0, "00:00 / 00:15");
+    setTimerDisplay(0, "00:00 / 00:02");
   }
 
   let phoneAusTimer = null;
@@ -481,24 +480,24 @@
     state.points[index] = { id:index+1, name, result, confidence, rr, gradcam, audio, sampleId, sourceRecording, annotationCycle, probabilities };
     if(isScreenVisible("proses-auskultasi")){
       renderPointList(index, "waiting");
-      setTimerDisplay(0, "00:00 / 00:15");
+      setTimerDisplay(0, "00:00 / 00:02");
       const doneCount = state.points.filter(Boolean).length;
       $("#activePointLabel").textContent = doneCount>=6
-        ? "✓ 6 titik selesai. Ikuti instruksi pengukuran SpO₂ pada layar perangkat."
+        ? "Tempelkan jari sesuai instruksi di perangkat fisik."
         : `✓ Titik ${index+1} selesai, bersiap titik berikutnya`;
     }
   });
 
   document.addEventListener("antarakala:all-done", ()=>{
     if(isScreenVisible("proses-auskultasi")){
-      $("#activePointLabel").textContent = "✓ 6 titik selesai. Tempelkan jari pada sensor sesuai instruksi di LCD perangkat.";
+      $("#activePointLabel").textContent = "Tempelkan jari sesuai instruksi di perangkat fisik.";
     }
     updateLanjutButton();
   });
 
   document.addEventListener("antarakala:max-start", ()=>{
     if(isScreenVisible("proses-auskultasi")){
-      $("#activePointLabel").textContent = "Mengukur SpO₂ dan HR pada perangkat…";
+      $("#activePointLabel").textContent = "Tempelkan jari sesuai instruksi di perangkat fisik.";
     }
     updateLanjutButton();
   });
@@ -507,7 +506,7 @@
     state.vitals.spo2 = Number(e.detail.spo2);
     state.vitals.hr = Number(e.detail.hr);
     if(isScreenVisible("proses-auskultasi")){
-      $("#activePointLabel").textContent = "✓ Pengukuran sensor selesai. Siap memulai analisis.";
+      $("#activePointLabel").textContent = "Pemeriksaan selesai. Siap memulai analisis";
     }
     updateLanjutButton();
   });
@@ -524,13 +523,31 @@
   });
 
   /* ---------------- INPUT SUHU SEBELUM AUSKULTASI ---------------- */
-  function prefillParameter(){
+  function validateTempForm(){
     const el = $("#vTemp");
-    if(el && !el.value && Number.isFinite(state.vitals.temp)) el.value = state.vitals.temp.toFixed(1);
+    const raw = el ? String(el.value).trim().replace(",", ".") : "";
+    const val = raw === "" ? NaN : parseFloat(raw);
+    const ok = Number.isFinite(val) && val >= 30 && val <= 45;
+    if($("#btnToPanduan")) $("#btnToPanduan").disabled = !ok;
+    return ok;
   }
 
+  function prefillParameter(){
+    const el = $("#vTemp");
+    if(el){
+      el.value = Number.isFinite(state.vitals.temp) ? String(state.vitals.temp).replace(".", ",") : "";
+    }
+    validateTempForm();
+  }
+
+  $("#vTemp") && $("#vTemp").addEventListener("input", ()=>{
+    validateTempForm();
+  });
+
   $("#btnToPanduan") && $("#btnToPanduan").addEventListener("click", ()=>{
-    state.vitals.temp = parseFloat($("#vTemp").value) || 36.8;
+    if(!validateTempForm()) return;
+    const raw = String($("#vTemp").value).trim().replace(",", ".");
+    state.vitals.temp = parseFloat(raw);
     if(!state.vitals.grunt) state.vitals.grunt = "tidak";
     goTo("panduan-auskultasi");
   });
@@ -673,7 +690,7 @@
     banner.className = "result-banner " + r.tier;
     const info = RESULT_TEXT[r.riskType] || RESULT_TEXT.low;
     $("#resultTitle").textContent = info.label;
-    $("#resultAction").innerHTML = `<p>${info.lead}</p><div class="result-action-label">Tindakan yang disarankan:</div><ol>${info.actions.map(x=>`<li>${x}</li>`).join("")}</ol>`;
+    $("#resultAction").innerHTML = `<p>${info.lead}</p>`;
 
     const tagMap = { crackle:"tag-crackle", wheeze:"tag-wheeze", normal:"tag-normal" };
     const labelMap = { crackle:"Crackle", wheeze:"Wheeze", normal:"Normal" };
@@ -690,6 +707,11 @@
     if(rrEl) rrEl.textContent = `${r.rrValue}`;
     if(hrEl) hrEl.textContent = state.vitals.hr !== null && Number.isFinite(Number(state.vitals.hr)) ? `${Math.round(Number(state.vitals.hr))}` : "—";
     if(spo2El) spo2El.textContent = state.vitals.spo2 !== null && Number.isFinite(Number(state.vitals.spo2)) ? `${Math.round(Number(state.vitals.spo2))}` : "—";
+
+    const actionsWrap = $("#resultActionsWrap");
+    if(actionsWrap){
+      actionsWrap.innerHTML = `<div class="card"><div class="card-title" style="margin-bottom:10px;">Tindakan yang Disarankan</div><ol class="result-actions-list">${info.actions.map(x=>`<li>${x}</li>`).join("")}</ol></div>`;
+    }
   }
 
   /* ---------------- PENJELASAN AKUSTIK / GRAD-CAM ---------------- */
@@ -837,7 +859,7 @@
     showToast("Hasil pemeriksaan tersimpan ke riwayat");
     state.patient = { name:"", age:null, gender:"" };
     state.danger = {};
-    state.vitals = { temp:36.8, spo2:null, hr:null, grunt:"tidak" };
+    state.vitals = { temp:null, spo2:null, hr:null, grunt:"tidak" };
     state.points = new Array(6).fill(null);
     state.result = null;
     state.dataConsent = null;
@@ -874,7 +896,7 @@
       <div class="content">
         <h4>${h.name}</h4>
         <p class="home-risk-line">${riskLabelFor(h)}</p>
-        <div class="history-footer">
+        <div class="history-footer history-footer-stacked">
           <span class="pill ${pill}">${historyActionFor(h)}</span>
           <span class="history-time">${h.when}</span>
         </div>

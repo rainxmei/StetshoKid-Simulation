@@ -12,7 +12,7 @@
     "Posterior Atas Kiri","Posterior Atas Kanan","Posterior Bawah Kiri",
     "Posterior Bawah Kanan","Anterior Atas Kiri","Anterior Atas Kanan"
   ];
-  const REC_SECONDS = 15;         // durasi rekam per titik
+  const REC_SECONDS = 2;         // durasi rekam per titik
   const BAD_SIGNAL_CHANCE = 0.16; // peluang kualitas sinyal rendah per rekaman
   const RESULT_COLORS = { crackle:"#D9364A", wheeze:"#C98A00", normal:"#00A3AE" };
   const RESULT_LABELS = { crackle:"CRACKLE", wheeze:"WHEEZE", normal:"NORMAL" };
@@ -109,6 +109,20 @@
     </svg>`;
   }
 
+
+  function median(values){
+    const arr = values.filter(Number.isFinite).slice().sort((a,b)=>a-b);
+    if(!arr.length) return NaN;
+    const m = Math.floor(arr.length/2);
+    return arr.length % 2 ? arr[m] : (arr[m-1] + arr[m]) / 2;
+  }
+
+  function currentRR(){
+    const rrValues = D.results.map(r => r ? Number(r.rr) : NaN).filter(Number.isFinite);
+    const rr = median(rrValues);
+    return Number.isFinite(rr) ? Math.round(rr) : null;
+  }
+
   function battWifi(){
     return `<div class="dlcd-status">
       <div class="dlcd-batt"><i></i><i></i><i></i><span class="cap"></span></div>
@@ -145,32 +159,35 @@
     if(D.state === "allDone"){
       if(D.maxState === "prompt"){
         el.innerHTML = `
-          <div class="dlcd-header"><b>Sensor MAX30102</b>${battWifi()}</div>
+          <div class="dlcd-header"><b>StethoKid</b>${battWifi()}</div>
           <div class="dlcd-max-wrap">
             <div class="dlcd-max-icon">☝</div>
             <b>Tempelkan Jari</b>
-            <span>Tempelkan jari telunjuk pada sensor MAX30102 hingga menutup area sensor.</span>
+            <span>Tempelkan jari telunjuk pada oksimeter.</span>
+            <small>${currentRR() !== null ? `RR terdeteksi: ${currentRR()} x/menit` : ""}</small>
             <em>Tekan PILIH setelah jari terpasang.</em>
           </div>`;
         return;
       }
       if(D.maxState === "measuring"){
         el.innerHTML = `
-          <div class="dlcd-header"><b>Sensor MAX30102</b>${battWifi()}</div>
+          <div class="dlcd-header"><b>StethoKid</b>${battWifi()}</div>
           <div class="dlcd-max-wrap">
             <div class="dlcd-max-pulse">♥</div>
             <b>MENGUKUR...</b>
             <span>Pertahankan jari tetap diam pada sensor.</span>
+            <small>${currentRR() !== null ? `RR: ${currentRR()} x/menit` : ""}</small>
             <div class="dlcd-max-progress"><i></i></div>
           </div>`;
         return;
       }
       if(D.maxState === "done"){
         el.innerHTML = `
-          <div class="dlcd-header"><b>Sensor MAX30102</b>${battWifi()}</div>
+          <div class="dlcd-header"><b>StethoKid</b>${battWifi()}</div>
           <div class="dlcd-max-result">
             <div><span>SpO₂</span><b>${D.spo2}%</b></div>
             <div><span>HR</span><b>${D.hr} bpm</b></div>
+            <div><span>RR</span><b>${currentRR() !== null ? currentRR() + " x/menit" : "—"}</b></div>
             <p>✓ Pengukuran selesai</p>
             <small>Lanjutkan analisis di Web Lokal</small>
           </div>`;

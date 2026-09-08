@@ -251,11 +251,11 @@
               <div class="screen-body">
                 <div class="alert alert-info">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
-                  <p>Operasikan <b>perangkat fisik StethoKid</b> untuk merekam suara paru. Hasil klasifikasi tiap titik tidak ditampilkan sampai analisis akhir.</p>
+                  <p>Operasikan <b>perangkat fisik StethoKid</b> untuk merekam suara paru. Layar ini mengikuti secara otomatis.</p>
                 </div>
                 <div class="timer-card">
                   <div class="point-label"><span class="mic-pulse"></span><span id="activePointLabel">Menunggu perangkat mulai merekam…</span></div>
-                  <div class="timer-num" id="timerNum">00:00 / 00:15</div>
+                  <div class="timer-num" id="timerNum">00:00 / 00:02</div>
                   <div class="timer-bar"><div class="timer-bar-fill" id="timerBarFill"></div></div>
                 </div>
 
@@ -282,8 +282,7 @@
                 <span class="brand-name">StethoKid</span>
               </header>
               <div class="screen-body">
-                <div class="h1 input-result-title">Input Suhu Tubuh</div>
-                <p class="subtext">Masukkan hasil pengukuran suhu sebelum memulai auskultasi.</p>
+                
                 <div class="card">
                   <div class="field">
                     <label>Suhu Tubuh</label>
@@ -354,13 +353,14 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
                     Hasil Auskultasi 6 Titik
                   </div>
-                  <div class="result-vitals-row" aria-live="polite">
+                  <div id="pointResultList" class="point-list point-list-compact"></div>
+                  <div class="result-vitals-row result-vitals-row-bottom" aria-live="polite">
                     <div class="result-vital"><span>RR</span><b id="rrResultValue">—</b><small>x/menit</small></div>
                     <div class="result-vital"><span>HR</span><b id="hrResultValue">—</b><small>bpm</small></div>
                     <div class="result-vital"><span>SpO₂</span><b id="spo2ResultValue">—</b><small>%</small></div>
                   </div>
-                  <div id="pointResultList" class="point-list point-list-compact"></div>
                 </div>
+                <div id="resultActionsWrap"></div>
               </div>
               <div style="padding:0 18px 18px;">
                 <button class="btn btn-primary" data-nav="penjelasan-ai">Lihat Penjelasan
@@ -627,7 +627,7 @@
           </div>
 
           <div class="device-disclaimer">
-            Model A CNN telah diimplementasikan untuk mengklasifikasikan suara paru. Pada purwarupa digital, akuisisi audio langsung dari mikrofon belum terintegrasi sehingga audio yang digunakan untuk demonstrasi masih disimulasikan. Audio tersebut tetap diproses oleh Model A, dan hasil klasifikasinya diteruskan sebagai input ke Model B LightGBM. Model B telah diimplementasikan untuk menghasilkan stratifikasi risiko. Untuk meningkatkan transparansi hasil, Grad-CAM diterapkan untuk menjelaskan prediksi Model A, sedangkan TreeSHAP digunakan untuk menjelaskan kontribusi parameter pada hasil Model B.
+            Seluruh bagian output pada purwarupa ini, termasuk hasil prediksi, skor risiko, penjelasan keputusan AI bersifat placeholder dan belum merepresentasikan performa maupun spesifikasi akhir, mengingat model machine learning belum diintegrasikan secara fungsional.
           </div>
         </div>
 
